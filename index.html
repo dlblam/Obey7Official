@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0a08">
+  <title>OBEY 7 — Sứ Giả Tận Thế</title>
+  <link rel="stylesheet" href="public/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cinzel+Decorative:wght@700&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <header class="topbar">
+    <button class="icon-btn" id="tocBtn" aria-label="Mở mục lục" title="Mục lục">☰</button>
+    <div class="brand">
+      <span class="brand-small">LBD · DIGITAL EDITION</span>
+      <strong>OBEY 7</strong>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="searchBtn" aria-label="Tìm kiếm" title="Tìm kiếm">⌕</button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Cài đặt đọc" title="Cài đặt">⚙</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="book-stage" id="bookStage">
+      <div class="book-shadow"></div>
+      <div class="book closed" id="book">
+        <div class="cover" id="cover">
+          <div class="cover-inner">
+            <div class="cover-line"></div>
+            <span class="cover-eyebrow">LBD · OFFICIAL EDITION</span>
+            <h1>OBEY 7</h1>
+            <div class="cover-divider"><i></i><span>✦</span><i></i></div>
+            <p>Sứ Giả Tận Thế</p>
+            <small>THE FINAL MESSENGER</small>
+            <div class="cover-seal">VII</div>
+          </div>
+        </div>
+
+        <section class="reader" aria-label="Trình đọc sách">
+          <div class="reader-page left-page" id="leftPage">
+            <div class="paper">
+              <div class="page-running" id="leftChapter"></div>
+              <article class="page-text" id="leftText"></article>
+              <div class="page-footer"><span id="leftNumber"></span><span>OBEY 7</span></div>
+            </div>
+          </div>
+          <div class="reader-page right-page" id="rightPage">
+            <div class="paper">
+              <div class="page-running" id="rightChapter"></div>
+              <article class="page-text" id="rightText"></article>
+              <div class="page-footer"><span id="rightNumber"></span><span>OBEY 7</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <button class="page-hotspot prev-hotspot" id="prevHotspot" aria-label="Trang trước"></button>
+      <button class="page-hotspot next-hotspot" id="nextHotspot" aria-label="Trang sau"></button>
+    </section>
+
+    <section class="reader-info">
+      <div class="chapter-title" id="chapterTitle">Bìa sách</div>
+      <div class="progress-track"><div id="progressBar"></div></div>
+      <div class="reader-meta">
+        <span id="progressText">Nhấn vào bìa để mở sách</span>
+        <span id="pageIndicator">Bìa</span>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-controls">
+    <button id="prevBtn">‹ <span>Trước</span></button>
+    <button id="centerOpen" class="open-button">Mở sách</button>
+    <button id="nextBtn"><span>Sau</span> ›</button>
+  </nav>
+
+  <aside class="drawer" id="tocDrawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div><small>MỤC LỤC</small><h2>Nội dung</h2></div>
+      <button class="close-btn" data-close="tocDrawer">×</button>
+    </div>
+    <div class="toc-list" id="tocList"></div>
+  </aside>
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+  <dialog class="modal" id="settingsModal">
+    <div class="modal-head"><h2>Thiết lập đọc</h2><button class="close-btn" data-dialog-close>×</button></div>
+    <label>Cỡ chữ <output id="fontSizeValue">18px</output>
+      <input id="fontSizeRange" type="range" min="14" max="26" value="18">
+    </label>
+    <label>Giãn dòng <output id="lineHeightValue">1.8</output>
+      <input id="lineHeightRange" type="range" min="1.4" max="2.2" value="1.8" step="0.1">
+    </label>
+    <label>Chế độ giấy
+      <select id="paperMode">
+        <option value="classic">Cổ điển</option>
+        <option value="night">Đêm</option>
+        <option value="warm">Ấm</option>
+      </select>
+    </label>
+    <button class="modal-action" id="fullscreenBtn">Toàn màn hình</button>
+  </dialog>
+
+  <dialog class="modal search-modal" id="searchModal">
+    <div class="modal-head"><h2>Tìm trong sách</h2><button class="close-btn" data-dialog-close>×</button></div>
+    <div class="search-row"><input id="searchInput" type="search" placeholder="Nhập từ hoặc cụm từ..."><button id="doSearch">Tìm</button></div>
+    <div id="searchResults" class="search-results"></div>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+  <script src="public/js/script.js"></script>
+</body>
+</html>
