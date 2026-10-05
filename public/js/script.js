@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const r = await fetch(`public/content/${n}.txt`, {cache:"no-store"});
         if (!r.ok) break;
+        // text() preserves \n, \r\n and Unicode characters supplied by the TXT file.
         const text = await r.text();
         files.push({n, text});
       } catch { break; }
@@ -63,50 +64,37 @@ document.addEventListener("DOMContentLoaded", () => {
     return (line && line.length <= 90) ? line : `Phần ${n}`;
   }
 
-  // ĐÃ SỬA TRIỆT ĐỂ: Đo lường chính xác chiều cao vùng chứa văn bản thực tế
+  // Đo trực tiếp trên đúng font/kích thước của trang.
+  // white-space: pre-wrap giữ nguyên xuống dòng; từ chỉ được cắt ở whitespace.
   function paginateUnit(text) {
-    const samplePage = document.querySelector(".reader-page") || document.querySelector(".paper");
-    const sampleTextPane = document.querySelector(".page-text");
+    const probe = document.createElement("div");
+    probe.className = "page-text";
+    probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;width:${document.querySelector(".reader-page")?.clientWidth-70 || 400}px;height:${document.querySelector(".paper")?.clientHeight-95 || 500}px;overflow:hidden;white-space:pre-wrap;overflow-wrap:normal;word-break:normal;hyphens:none;font-size:${fontSize}px;line-height:${lineHeight}`;
+    document.body.appendChild(probe);
     
-    // Tính toán chiều cao khả dụng chuẩn xác dựa trên DOM thực tế hiện tại
-    const availableWidth = samplePage ? (samplePage.clientWidth - 70) : 400;
-    const availableHeight = sampleTextPane ? sampleTextPane.clientHeight : (samplePage ? samplePage.clientHeight - 95 : 500);
+    // Đã áp dụng ý tưởng của bạn: Chỉ lấy ~75% chiều cao trang để chừa khoảng trống an toàn phòng hờ phóng to chữ
+    const capacity = probe.clientHeight * 0.75;
+    
+    document.body.removeChild(probe);
 
+    // Tokenization giữ nguyên whitespace, vì vậy newline/khoảng trắng không bị biến thành một dấu cách.
+    const tokens = text.split(/(\s+)/);
+    const result = []; let currentText = "";
     const measure = document.createElement("div");
     measure.className = "page-text";
-    measure.style.cssText = `position:absolute; visibility:hidden; pointer-events:none; left:-9999px; top:-9999px; width:${availableWidth}px; height:${availableHeight}px; white-space:pre-wrap; overflow-wrap:normal; word-break:normal; hyphens:none; font-size:${fontSize}px; line-height:${lineHeight};`;
+    measure.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;width:${document.querySelector(".reader-page")?.clientWidth-70 || 400}px;height:auto;white-space:pre-wrap;overflow-wrap:normal;word-break:normal;hyphens:none;font-size:${fontSize}px;line-height:${lineHeight}`;
     document.body.appendChild(measure);
-
-    const tokens = text.split(/(\s+)/);
-    const result = []; 
-    let currentText = "";
 
     for (const token of tokens) {
       const candidate = currentText + token;
       measure.textContent = candidate;
-      
-      // Nếu vượt quá chiều cao trang, tiến hành cắt trang tại đây (giữ lại phần trước đó)
-      if (currentText && measure.scrollHeight > availableHeight) {
+      if (currentText && measure.scrollHeight > capacity) {
         result.push(currentText);
+        // Không để whitespace đầu trang. Nếu token là newline/khoảng trắng,
+        // phần whitespace sẽ được xử lý ở đầu vòng sau mà không cắt chữ.
         currentText = token;
         measure.textContent = currentText;
-        
-        // Trường hợp đặc biệt: 1 token quá dài vượt quá cả 1 trang
-        while (measure.scrollHeight > availableHeight && currentText.length > 1) {
-          // Cắt bớt ký tự nếu token quá lớn (tránh lặp vô hạn)
-          let cutIndex = Math.floor(currentText.length / 2);
-          // Cố gắng tìm khoảng trắng gần nhất để không cắt đứt từ nếu có thể
-          let subToken1 = currentText.slice(0, cutIndex);
-          measure.textContent = subToken1;
-          if (measure.scrollHeight <= availableHeight) {
-            result.push(subToken1);
-            currentText = currentText.slice(cutIndex);
-          } else {
-            // Cắt chặt hơn nữa
-            currentText = subToken1;
-          }
-          measure.textContent = currentText;
-        }
+        if (measure.scrollHeight > capacity) currentText = "";
       } else {
         currentText = candidate;
       }
@@ -142,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
     leftChapter.textContent = p ? p.title : "";
     leftNumber.textContent = p ? `${p.pageInFile} / ${p.totalInFile}` : "";
     rightText.textContent = next?.text || "";
-    rightChapter.textContent = next?.title || "";
+    rightChapter.textContent = next ? next.title : "";
     rightNumber.textContent = next ? `${next.pageInFile} / ${next.totalInFile}` : "";
     chapterTitle.textContent = p ? p.title : "";
     const pct = pages.length <= 1 ? 100 : ((current+1)/pages.length)*100;
@@ -199,25 +187,9 @@ document.addEventListener("DOMContentLoaded", () => {
     $("#fontSizeRange").value=fontSize; $("#fontSizeValue").value=`${fontSize}px`;
     $("#lineHeightRange").value=lineHeight; $("#lineHeightValue").value=lineHeight;
   }
-  
   $("#fontSizeRange").oninput=e=>{fontSize=+e.target.value;$("#fontSizeValue").value=`${fontSize}px`;saveSettings()};
   $("#lineHeightRange").oninput=e=>{lineHeight=+e.target.value;$("#lineHeightValue").value=lineHeight;saveSettings()};
-  
-  // Đảm bảo chạy lại buildUnits ngay sau khi thay đổi cỡ chữ/khoảng cách dòng để tái phân trang hoàn chỉnh
-  $("#fontSizeRange").onchange=$("#lineHeightRange").onchange=()=>{ 
-    applySettings(); 
-    const oldFile = pages[current]?.file;
-    const oldPageInFile = pages[current]?.pageInFile || 1;
-    buildUnits(); 
-    buildTOC(); 
-    
-    // Cố gắng giữ nguyên vị trí đọc hiện tại hoặc quy về trang tương ứng gần nhất trong file
-    let newIdx = pages.findIndex(p => p.file === oldFile && p.pageInFile >= oldPageInFile);
-    if (newIdx < 0) newIdx = pages.findIndex(p => p.file === oldFile);
-    current = newIdx >= 0 ? newIdx : Math.min(Math.max(0, current), pages.length - 1);
-    render(); 
-  };
-
+  $("#fontSizeRange").onchange=$("#lineHeightRange").onchange=()=>{ const old=current; buildUnits(); buildTOC(); current=Math.min(old,pages.length-1); render(); applySettings(); };
   $("#paperMode").onchange=e=>document.querySelectorAll(".paper").forEach(p=>{p.classList.remove("night","warm");if(e.target.value!=="classic")p.classList.add(e.target.value)});
   $("#fullscreenBtn").onclick=()=>document.documentElement.requestFullscreen?.();
 
