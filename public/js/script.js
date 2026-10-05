@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Đo trực tiếp trên đúng font/kích thước của trang.
   // white-space: pre-wrap giữ nguyên xuống dòng; từ chỉ được cắt ở whitespace.
   function paginateUnit(text) {
-    // Lấy kích thước thực tế của vùng chứa văn bản thay vì dùng số cứng
+    // Tự động lấy kích thước thực tế từ DOM tránh bị lệch khi đổi cỡ chữ/giãn dòng
     const samplePage = document.querySelector(".reader-page");
     const samplePaper = document.querySelector(".paper");
     const availableWidth = samplePage ? samplePage.clientWidth - 70 : 400;
@@ -190,28 +190,28 @@ document.addEventListener("DOMContentLoaded", () => {
     $("#fontSizeRange").value=fontSize; $("#fontSizeValue").value=`${fontSize}px`;
     $("#lineHeightRange").value=lineHeight; $("#lineHeightValue").value=lineHeight;
   }
-  
-  // Cập nhật real-time khi kéo thay đổi cấu hình
-  $("#fontSizeRange").oninput = e => { 
-    fontSize = +e.target.value; 
-    $("#fontSizeValue").value = `${fontSize}px`; 
-    saveSettings(); 
-    applySettings(); 
-    const old = current; 
-    buildUnits(); 
-    current = Math.min(Math.max(0, old), pages.length - 1); 
-    render(); 
+
+  // Nâng cấp: Tự động phân trang và căn chỉnh lại ngay lập tức khi người dùng thay đổi cỡ chữ hoặc giãn dòng
+  $("#fontSizeRange").oninput = e => {
+    fontSize = +e.target.value;
+    $("#fontSizeValue").value = `${fontSize}px`;
+    saveSettings();
+    applySettings();
+    const old = current;
+    buildUnits();
+    current = Math.min(Math.max(0, old), pages.length - 1);
+    render();
   };
-  
-  $("#lineHeightRange").oninput = e => { 
-    lineHeight = +e.target.value; 
-    $("#lineHeightValue").value = lineHeight; 
-    saveSettings(); 
-    applySettings(); 
-    const old = current; 
-    buildUnits(); 
-    current = Math.min(Math.max(0, old), pages.length - 1); 
-    render(); 
+
+  $("#lineHeightRange").oninput = e => {
+    lineHeight = +e.target.value;
+    $("#lineHeightValue").value = lineHeight;
+    saveSettings();
+    applySettings();
+    const old = current;
+    buildUnits();
+    current = Math.min(Math.max(0, old), pages.length - 1);
+    render();
   };
 
   $("#paperMode").onchange=e=>document.querySelectorAll(".paper").forEach(p=>{p.classList.remove("night","warm");if(e.target.value!=="classic")p.classList.add(e.target.value)});
