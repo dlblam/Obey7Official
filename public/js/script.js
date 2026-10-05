@@ -67,9 +67,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // Đo trực tiếp trên đúng font/kích thước của trang.
   // white-space: pre-wrap giữ nguyên xuống dòng; từ chỉ được cắt ở whitespace.
   function paginateUnit(text) {
+    // Lấy kích thước thực tế của vùng chứa văn bản thay vì dùng số cứng
+    const samplePage = document.querySelector(".reader-page");
+    const samplePaper = document.querySelector(".paper");
+    const availableWidth = samplePage ? samplePage.clientWidth - 70 : 400;
+    const availableHeight = samplePaper ? samplePaper.clientHeight - 95 : 500;
+
     const probe = document.createElement("div");
     probe.className = "page-text";
-    probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;width:${document.querySelector(".reader-page")?.clientWidth-70 || 400}px;height:${document.querySelector(".paper")?.clientHeight-95 || 500}px;overflow:hidden;white-space:pre-wrap;overflow-wrap:normal;word-break:normal;hyphens:none;font-size:${fontSize}px;line-height:${lineHeight}`;
+    probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;width:${availableWidth}px;height:${availableHeight}px;overflow:hidden;white-space:pre-wrap;overflow-wrap:normal;word-break:normal;hyphens:none;font-size:${fontSize}px;line-height:${lineHeight}`;
     document.body.appendChild(probe);
     const capacity = probe.clientHeight;
     document.body.removeChild(probe);
@@ -79,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const result = []; let currentText = "";
     const measure = document.createElement("div");
     measure.className = "page-text";
-    measure.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;width:${document.querySelector(".reader-page")?.clientWidth-70 || 400}px;height:auto;white-space:pre-wrap;overflow-wrap:normal;word-break:normal;hyphens:none;font-size:${fontSize}px;line-height:${lineHeight}`;
+    measure.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;width:${availableWidth}px;height:auto;white-space:pre-wrap;overflow-wrap:normal;word-break:normal;hyphens:none;font-size:${fontSize}px;line-height:${lineHeight}`;
     document.body.appendChild(measure);
 
     for (const token of tokens) {
@@ -184,9 +190,30 @@ document.addEventListener("DOMContentLoaded", () => {
     $("#fontSizeRange").value=fontSize; $("#fontSizeValue").value=`${fontSize}px`;
     $("#lineHeightRange").value=lineHeight; $("#lineHeightValue").value=lineHeight;
   }
-  $("#fontSizeRange").oninput=e=>{fontSize=+e.target.value;$("#fontSizeValue").value=`${fontSize}px`;saveSettings()};
-  $("#lineHeightRange").oninput=e=>{lineHeight=+e.target.value;$("#lineHeightValue").value=lineHeight;saveSettings()};
-  $("#fontSizeRange").onchange=$("#lineHeightRange").onchange=()=>{ const old=current; buildUnits(); buildTOC(); current=Math.min(old,pages.length-1); render(); applySettings(); };
+  
+  // Cập nhật real-time khi kéo thay đổi cấu hình
+  $("#fontSizeRange").oninput = e => { 
+    fontSize = +e.target.value; 
+    $("#fontSizeValue").value = `${fontSize}px`; 
+    saveSettings(); 
+    applySettings(); 
+    const old = current; 
+    buildUnits(); 
+    current = Math.min(Math.max(0, old), pages.length - 1); 
+    render(); 
+  };
+  
+  $("#lineHeightRange").oninput = e => { 
+    lineHeight = +e.target.value; 
+    $("#lineHeightValue").value = lineHeight; 
+    saveSettings(); 
+    applySettings(); 
+    const old = current; 
+    buildUnits(); 
+    current = Math.min(Math.max(0, old), pages.length - 1); 
+    render(); 
+  };
+
   $("#paperMode").onchange=e=>document.querySelectorAll(".paper").forEach(p=>{p.classList.remove("night","warm");if(e.target.value!=="classic")p.classList.add(e.target.value)});
   $("#fullscreenBtn").onclick=()=>document.documentElement.requestFullscreen?.();
 
